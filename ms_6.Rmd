@@ -1,0 +1,74 @@
+---
+title: "ms_6"
+author: "Rachel Phan"
+date: "4/2/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(janitor)
+library(readr)
+library(readxl)
+library(lubridate)
+library(stringr)
+```
+
+```{r loading data, include=FALSE}
+
+# Data from https://www.ers.usda.gov/data-products/livestock-meat-domestic-data/
+
+meat <- read_excel("RedMeatPoultry_ProdFull.xlsx", skip = 2)
+
+```
+
+```{r clean data, include=FALSE}
+
+meat_clean <- meat %>% 
+  select(1:6) %>% 
+  rename(beef = "Beef 3/...2") %>% 
+  rename(veal = "Veal 3/...3") %>% 
+  rename(pork = "Pork 3/...4") %>% 
+  rename("lamb and mutton" = "Lamb and mutton 3/...5") %>% 
+  rename(date = "...1") %>% 
+  rename(total = "Total red meat 3/ 4/...6") %>% 
+  pivot_longer(cols = 2:5, names_to = "kind_of_meat") %>% 
+  rename(red_meat_produced = value) %>% 
+  filter(!is.na(red_meat_produced) | !is.na(total))
+
+meat_clean = meat_clean[,c(1,3,4,2)]
+meat_clean = meat_clean[-c(1:8, 1773:2905),]
+
+meat_clean <- meat_clean %>% 
+  mutate(date = paste(meat_clean$date, "-01", sep = "")) %>% 
+  mutate(date = as.Date(meat_clean$date, format = "%b-%Y-%d"))
+
+meat_clean_decade <- meat_clean[c(5:52, 485:532, 965:1012, 1445:1492),] 
+
+```
+
+```{r create graph, echo=FALSE}
+
+meat_clean_plot <- meat_clean %>% 
+  ggplot() + 
+  geom_point(aes(x = date, y = red_meat_produced, color = kind_of_meat)) +
+  scale_y_log10() + 
+  labs(title = "Red Meat Produced From 1989 - 2019",
+       x = "Date",
+       y = "Red Meat Produced (Millions of Pounds)", 
+       color = "Kind of Meat") +
+       theme_classic() +
+      theme(
+        legend.position = "right",
+        axis.text.x = element_text(angle = 40, hjust = 1))
+
+# scale_x_continuous(breaks = seq(1980, 2020, 10), 
+                     # label = c("1980" = "1980",
+                             #  "1990" = "1990", 
+                              # "2000" = "2000", 
+                               #"2010" = "2010", 
+                              # "2020" = "2020")
+               #     )
+  
+```
